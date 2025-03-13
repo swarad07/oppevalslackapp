@@ -1,10 +1,5 @@
-require("dotenv").config();
-const express = require("express");
 const { WebClient } = require("@slack/web-api");
-const serverless = require("serverless-http");
-
-const app = express();
-app.use(express.json());
+require("dotenv").config();
 
 // Initialize Slack Web API client with your bot token
 const slackClient = new WebClient(process.env.SLACK_BOT_TOKEN);
@@ -47,16 +42,19 @@ async function postEvaluationQuestions(channelId, channelName) {
   }
 }
 
-/**
- * Endpoint to handle Slack events.
- */
-app.post("/", async (req, res) => {
+// This is the serverless function that Vercel will execute
+module.exports = async (req, res) => {
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const body = req.body;
   console.log("Received Slack event:", body);
 
   // Handle Slack's URL verification challenge
   if (body.type === "url_verification") {
-    return res.send(body.challenge);
+    return res.status(200).json({ challenge: body.challenge });
   }
 
   // Process event callbacks
@@ -70,16 +68,8 @@ app.post("/", async (req, res) => {
         await postEvaluationQuestions(channel.id, channel.name);
       }
     }
-    return res.status(200).send("Event received");
+    return res.status(200).json({ message: "Event received" });
   }
 
-  res.status(200).send("No action taken");
-});
-
-// A simple GET route to confirm the function is running
-app.get("/api/slack-events", (req, res) => {
-  res.send("Slack event server is ready to receive events!");
-});
-
-// Export the serverless handler
-module.exports = serverless(app);
+  return res.status(200).json({ message: "No action taken" });
+};
