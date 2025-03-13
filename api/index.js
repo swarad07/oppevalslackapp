@@ -87,5 +87,5 @@ app.get("/", (req, res) => {
   res.send("Slack event server is running!");
 });
 
-// Wrap the Express app using serverless-http
-module.exports.handler = serverless(app);
+// Export the wrapped Express app as the default export for Vercel
+module.exports = serverless(app);
