@@ -16,9 +16,7 @@ async function postEvaluationQuestions(channelId, channelName) {
     // Markdown welcome message and evaluation questions string
     const messageText = `
     This channel is dedicated to the new opportunity. To ensure that our Engineering teams can best support your efforts and guide this opportunity towards closure, please take a few moments to answer the following questions.
-
     We trust & appreciate your insights and they are crucial in aligning our teams for success. Thank you for your collaboration and welcome aboard! You can read more about the questions and why they are important :point_right: <https://axelerant.atlassian.net/wiki/spaces/AH/pages/5108007089/Opp+Eval+Framework|here>.
-
     :one: *Is this opportunity aligned with our expertise and strategic goals for the Digital BU? (Yes, No).*
     :two: *What is the client's technical ecosystem and preferred engagement model?*
     :three: *What are the top 3 value drivers for Axelerant to pursue this project?*
