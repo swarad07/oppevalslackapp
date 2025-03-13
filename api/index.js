@@ -1,6 +1,7 @@
-require("dotenv").config();
-const express = require("express");
-const { WebClient } = require("@slack/web-api");
+require('dotenv').config();
+const express = require('express');
+const serverless = require('serverless-http');
+const { WebClient } = require('@slack/web-api');
 
 const app = express();
 app.use(express.json());
@@ -17,23 +18,23 @@ async function postEvaluationQuestions(channelId, channelName) {
     await slackClient.conversations.join({ channel: channelId });
     console.log(`Joined channel: ${channelName}`);
 
-    // Markdown welcome message and evaluation questions string
+    // Markdown welcome message and evaluation questions string with emojis and corrected link formatting
     const messageText = `
-    This channel is dedicated to the new opportunity. To ensure that our Engineering teams can best support your efforts and guide this opportunity towards closure, please take a few moments to answer the following questions. We trust & appreciate your insights and they are crucial in aligning our teams for success. Thank you for your collaboration and welcome aboard!
+This channel is dedicated to the new opportunity. To ensure that our Engineering teams can best support your efforts and guide this opportunity towards closure, please take a few moments to answer the following questions. We trust your insights are crucial in aligning our teams for success. Thank you for your collaboration and welcome aboard!
 
-  You can read more about the questions and why they are important :point_right: <https://axelerant.atlassian.net/wiki/spaces/AH/pages/5108007089/Opp+Eval+Framework|here>.
+You can read more about the questions and why they are important <https://axelerant.atlassian.net/wiki/spaces/AH/pages/5108007089/Opp+Eval+Framework|here> :point_right:
 
-  :one: *Is this opportunity aligned with our expertise and strategic goals for the Digital BU? (Yes, no). If yes, explain how?*
+:one: *What is the project scope, budget, and expected timeline?*
 
-  :two: *What is the client's technical ecosystem and preferred engagement model?*
+:two: *What is the client's technical ecosystem and preferred engagement model?*
 
-  :three: *What are the top 3 value drivers for Axelerant to pursue this project?*
+:three: *What is the primary business driver and success criteria for this project, and why should Axelerant deliver it?*
     `;
 
-    // Now post the evaluation questions
+    // Post the message in the channel
     const result = await slackClient.chat.postMessage({
       channel: channelId,
-      text: "Opportunity Evaluation Questions",
+      text: "Opportunity Evaluation",
       blocks: [
         {
           type: "section",
@@ -51,10 +52,9 @@ async function postEvaluationQuestions(channelId, channelName) {
 }
 
 /**
- * Endpoint to handle Slack events.
- * This endpoint:
- *  - Responds to the URL verification challenge.
- *  - Listens for 'channel_created' events and posts evaluation questions for channels starting with "opp".
+ * Main event handler for Slack events.
+ * - Responds to URL verification challenges.
+ * - Processes 'channel_created' events for channels starting with "opp".
  */
 app.post("/slack/events", async (req, res) => {
   const body = req.body;
@@ -82,13 +82,10 @@ app.post("/slack/events", async (req, res) => {
   res.status(200).send("No action taken");
 });
 
-// A simple GET route to confirm the server is running
+// Optional: a simple GET route to confirm the function is running
 app.get("/", (req, res) => {
   res.send("Slack event server is running!");
 });
 
-// Start the Express server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
-});
+// Wrap the Express app using serverless-http
+module.exports.handler = serverless(app);
