@@ -2,14 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
+      "src": "/slack/events",
+      "dest": "/api/slack-events"
+    },
+    {
       "src": "/(.*)",
-      "dest": "api/index.js"
+      "dest": "/api/index.js"
     }
   ]
 }

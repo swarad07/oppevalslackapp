@@ -15,5 +15,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "serverless-http": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
