@@ -50,7 +50,7 @@ async function postEvaluationQuestions(channelId, channelName) {
 /**
  * Endpoint to handle Slack events.
  */
-app.post("/api/slack-events", async (req, res) => {
+app.post("/", async (req, res) => {
   const body = req.body;
   console.log("Received Slack event:", body);
 
