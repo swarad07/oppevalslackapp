@@ -54,7 +54,9 @@ module.exports = async (req, res) => {
 
   // Handle Slack's URL verification challenge
   if (body.type === "url_verification") {
-    return res.status(200).json({ challenge: body.challenge });
+    // Return just the challenge value as plain text
+    res.setHeader('Content-Type', 'text/plain');
+    return res.status(200).send(body.challenge);
   }
 
   // Process event callbacks
