@@ -1,4 +1,10 @@
-require('dotenv').config();
+// api/index.js
+
+// Load dotenv only in non-production environments
+if (process.env.NODE_ENV !== "production") {
+  require('dotenv').config();
+}
+
 const express = require('express');
 const serverless = require('serverless-http');
 const { WebClient } = require('@slack/web-api');
@@ -6,8 +12,51 @@ const { WebClient } = require('@slack/web-api');
 const app = express();
 app.use(express.json());
 
-// Initialize Slack Web API client with your bot token
+// Initialize Slack Web API client using environment variables managed by Vercel
 const slackClient = new WebClient(process.env.SLACK_BOT_TOKEN);
+
+/**
+ * GET route to check if the server is running.
+ */
+app.get("/", (req, res) => {
+  console.log("GET / invoked");
+  res.send("Slack event server is running!");
+});
+
+/**
+ * POST route to handle Slack events.
+ */
+app.post("/slack/events", async (req, res) => {
+  console.log("POST /slack/events invoked");
+  try {
+    const body = req.body;
+    console.log("Received Slack event:", body);
+
+    // Handle URL verification from Slack
+    if (body.type === "url_verification") {
+      return res.send(body.challenge);
+    }
+
+    // Process Slack event callbacks
+    if (body.type === "event_callback") {
+      const event = body.event;
+      if (event.type === "channel_created") {
+        const channel = event.channel;
+        // Only process if the channel name starts with "opp" (case-insensitive)
+        if (channel.name && channel.name.toLowerCase().startsWith("opp")) {
+          await postEvaluationQuestions(channel.id, channel.name);
+        }
+      }
+      return res.status(200).send("Event received");
+    }
+
+    // If no action is taken, send a default response.
+    res.status(200).send("No action taken");
+  } catch (error) {
+    console.error("Error in /slack/events:", error);
+    res.status(500).send("Internal Server Error");
+  }
+});
 
 /**
  * Helper function to join a channel and post evaluation questions.
@@ -18,7 +67,7 @@ async function postEvaluationQuestions(channelId, channelName) {
     await slackClient.conversations.join({ channel: channelId });
     console.log(`Joined channel: ${channelName}`);
 
-    // Markdown welcome message and evaluation questions string with emojis and corrected link formatting
+    // Define the welcome message with Slack Markdown
     const messageText = `
 This channel is dedicated to the new opportunity. To ensure that our Engineering teams can best support your efforts and guide this opportunity towards closure, please take a few moments to answer the following questions. We trust your insights are crucial in aligning our teams for success. Thank you for your collaboration and welcome aboard!
 
@@ -31,7 +80,7 @@ You can read more about the questions and why they are important <https://axeler
 :three: *What is the primary business driver and success criteria for this project, and why should Axelerant deliver it?*
     `;
 
-    // Post the message in the channel
+    // Post the message to the channel
     const result = await slackClient.chat.postMessage({
       channel: channelId,
       text: "Opportunity Evaluation",
@@ -51,41 +100,6 @@ You can read more about the questions and why they are important <https://axeler
   }
 }
 
-/**
- * Main event handler for Slack events.
- * - Responds to URL verification challenges.
- * - Processes 'channel_created' events for channels starting with "opp".
- */
-app.post("/slack/events", async (req, res) => {
-  const body = req.body;
-  console.log("Received Slack event:", body);
-
-  // Handle Slack's URL verification challenge
-  if (body.type === "url_verification") {
-    return res.send(body.challenge);
-  }
-
-  // Process event callbacks
-  if (body.type === "event_callback") {
-    const event = body.event;
-    // Check if a channel was created
-    if (event.type === "channel_created") {
-      const channel = event.channel;
-      // Only act if the channel name starts with "opp" (case insensitive)
-      if (channel.name && channel.name.toLowerCase().startsWith("opp")) {
-        await postEvaluationQuestions(channel.id, channel.name);
-      }
-    }
-    return res.status(200).send("Event received");
-  }
-
-  res.status(200).send("No action taken");
-});
-
-// Optional: a simple GET route to confirm the function is running
-app.get("/", (req, res) => {
-  res.send("Slack event server is running!");
-});
-
-// Export the wrapped Express app as the default export for Vercel
-module.exports = serverless(app);
+// Export the wrapped Express app for Vercel,
+// using the option to not wait for an empty event loop.
+module.exports = serverless(app, { callbackWaitsForEmptyEventLoop: false });
