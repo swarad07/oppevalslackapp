@@ -20,7 +20,7 @@ async function postEvaluationQuestions(channelId, channelName) {
     const messageText = `
     This channel is dedicated to the new opportunity. To ensure that our teams can best support and collaboarte with each other, please take a few moments to answer the following questions. We promise it is a short form, wont take more than 30 seconds of your time. 😊
 
-    ⭐ Link for Opp Evaluation form -> ${formLink}
+    ⭐ <${formLink}|Link for Opp Evaluation form>
     `;
 
     // Now post the evaluation questions
