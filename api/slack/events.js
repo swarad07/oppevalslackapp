@@ -13,11 +13,14 @@ async function postEvaluationQuestions(channelId, channelName) {
     await slackClient.conversations.join({ channel: channelId });
     console.log(`Joined channel: ${channelName}`);
 
+    const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.580853574=${channelName}`;
+    console.log(`Form link: ${formLink}`);
+
     // Markdown welcome message and evaluation questions string
     const messageText = `
     This channel is dedicated to the new opportunity. To ensure that our teams can best support and collaboarte with each other, please take a few moments to answer the following questions. We promise it is a short form, wont take more than 30 seconds of your time. 😊
 
-    ⭐ Link for Opp Evaluation form -> https://forms.gle/YkcrntuSfYrykN5K8
+    ⭐ Link for Opp Evaluation form -> ${formLink}
     `;
 
     // Now post the evaluation questions
