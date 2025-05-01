@@ -13,7 +13,7 @@ async function postEvaluationQuestions(channelId, channelName) {
     await slackClient.conversations.join({ channel: channelId });
     console.log(`Joined channel: ${channelName}`);
 
-    const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.580853574=${channelName}`;
+    const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.2094785429=${channelName}&entry.580853574=${channelId}`;
     console.log(`Form link: ${formLink}`);
 
     // Markdown welcome message and evaluation questions string
