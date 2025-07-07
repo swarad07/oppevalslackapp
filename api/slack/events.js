@@ -43,6 +43,33 @@ async function postEvaluationQuestions(channelId, channelName) {
   }
 }
 
+async function handleAppMention(event) {
+  const channelId = event.channel;
+  const channelInfo = await slackClient.conversations.info({ channel: channelId });
+  const channelName = channelInfo.channel.name;
+  const userId = event.user;
+
+  const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.2094785429=${channelName}&entry.580853574=${channelId}`;
+  const messageText = `
+    Hi <@${userId}>, here's the link for the Opportunity Evaluation form:
+
+    ⭐ <${formLink}|Opp Evaluation Form>
+  `;
+
+  try {
+    await slackClient.chat.postMessage({
+      channel: channelId,
+      text: messageText,
+      // thread_ts: event.ts, // Reply in thread
+      unfurl_links: false, // Prevent link previews
+      unfurl_media: false
+    });
+    console.log(`Posted evaluation link in reply to user ${userId}`);
+  } catch (error) {
+    console.error("Error posting evaluation link reply:", error);
+  }
+}
+
 // This is the serverless function that Vercel will execute
 module.exports = async (req, res) => {
   // Only allow POST requests
@@ -71,6 +98,11 @@ module.exports = async (req, res) => {
         await postEvaluationQuestions(channel.id, channel.name);
       }
     }
+    // Check for app mentions
+    if (event.type === "app_mention") {
+      await handleAppMention(event);
+    }
+
     return res.status(200).json({ message: "Event received" });
   }
 
