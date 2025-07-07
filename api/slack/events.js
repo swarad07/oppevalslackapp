@@ -44,12 +44,30 @@ async function postEvaluationQuestions(channelId, channelName) {
 }
 
 async function handleAppMention(event) {
+  // Only respond if the message contains the word "link" (case-insensitive)
+  if (!event.text || !event.text.toLowerCase().includes("link")) {
+    console.log("App mentioned, but 'link' not found in message. Ignoring.");
+    const messageTextGeneric = `Hi <@${event.user}>, I can help you with the Opportunity Evaluation form. Do you need the link? Please mention me with the word "link" to get it.`;
+    try {
+      await slackClient.chat.postMessage({
+        channel: channelId,
+        text: messageTextGeneric,
+        unfurl_links: false, // Prevent link previews
+        unfurl_media: false
+      });
+      console.log(`Posted evaluation link in generic reply to user ${userId}`);
+    } catch (error) {
+      console.error("Error posting evaluation link in generic reply:", error);
+    }
+    return;
+  }
+
   const channelId = event.channel;
   const channelInfo = await slackClient.conversations.info({ channel: channelId });
   const channelName = channelInfo.channel.name;
   const userId = event.user;
 
-  console.log(`App mentioned in channel: ${channelName} by user: ${userId}`);
+  console.log(`App mentioned in channel: ${channelName} by user: ${userId}, requesting a link.`);
 
   const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.2094785429=${channelName}&entry.580853574=${channelId}`;
   const messageText = `
@@ -62,7 +80,6 @@ async function handleAppMention(event) {
     await slackClient.chat.postMessage({
       channel: channelId,
       text: messageText,
-      // thread_ts: event.ts, // Reply in thread
       unfurl_links: false, // Prevent link previews
       unfurl_media: false
     });
