@@ -49,6 +49,8 @@ async function handleAppMention(event) {
   const channelName = channelInfo.channel.name;
   const userId = event.user;
 
+  console.log(`App mentioned in channel: ${channelName} by user: ${userId}`);
+
   const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.2094785429=${channelName}&entry.580853574=${channelId}`;
   const messageText = `
     Hi <@${userId}>, here's the link for the Opportunity Evaluation form:
