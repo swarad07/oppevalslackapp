@@ -44,6 +44,11 @@ async function postEvaluationQuestions(channelId, channelName) {
 }
 
 async function handleAppMention(event) {
+  const channelId = event.channel;
+  const channelInfo = await slackClient.conversations.info({ channel: channelId });
+  const channelName = channelInfo.channel.name;
+  const userId = event.user;
+
   // Only respond if the message contains the word "link" (case-insensitive)
   if (!event.text || !event.text.toLowerCase().includes("link")) {
     console.log("App mentioned, but 'link' not found in message. Ignoring.");
@@ -61,11 +66,6 @@ async function handleAppMention(event) {
     }
     return;
   }
-
-  const channelId = event.channel;
-  const channelInfo = await slackClient.conversations.info({ channel: channelId });
-  const channelName = channelInfo.channel.name;
-  const userId = event.user;
 
   console.log(`App mentioned in channel: ${channelName} by user: ${userId}, requesting a link.`);
 
