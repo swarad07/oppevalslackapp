@@ -78,8 +78,8 @@ async function handleAppMention(event) {
 
   // Share a generic message if the app is mentioned but does not contain "link"
   if (!event.text || !event.text.toLowerCase().includes("link")) {
-    console.log("App mentioned, but 'link' not found in message. Ignoring.");
-    const messageTextGeneric = `Hi <@${event.user}>, I can help you with the Opportunity Evaluation form. Do you need the link? Please mention me with the word "link" to get it.`;
+    console.log("App mentioned, but 'link' or 'summary' not found in message. Ignoring.");
+    const messageTextGeneric = `Hi <@${event.user}>, I can help you with the Opportunity Evaluation form. Do you need the link? Please mention me with the word "link" to get it. If you need a summary of evaluations, please mention me with the word "summary".`;
     try {
       await slackClient.chat.postMessage({
         channel: channelId,
@@ -87,9 +87,9 @@ async function handleAppMention(event) {
         unfurl_links: false, // Prevent link previews
         unfurl_media: false
       });
-      console.log(`Posted evaluation link in generic reply to user ${userId}`);
+      console.log(`Posted a generic reply to user ${userId}`);
     } catch (error) {
-      console.error("Error posting evaluation link in generic reply:", error);
+      console.error("Error posting generic reply:", error);
     }
     return;
   }
@@ -134,8 +134,10 @@ async function apiGetSummary(channelId) {
     console.log(`Calling webhook URL: ${webhookUrl} for channel ID: ${channelId}`);
     const response = await fetch(webhookUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      authorization: `Basic ${Buffer.from(`${process.env.API_USER}:${process.env.API_PASSWORD}`).toString('base64')}`,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${Buffer.from(`${process.env.API_USER}:${process.env.API_PASSWORD}`).toString('base64')}`
+      },
       body: JSON.stringify({ channelId: channelId })
     });
 
