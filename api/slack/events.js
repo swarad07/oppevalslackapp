@@ -53,67 +53,81 @@ async function handleAppMention(event) {
   const channelInfo = await slackClient.conversations.info({ channel: channelId });
   const channelName = channelInfo.channel.name;
   const userId = event.user;
+  const text = event.text?.toLowerCase() || "";
 
-  // Only respond if the message contains the word "summary" (case-insensitive)
-  if (event.text.toLowerCase().includes("summary")) {
-    console.log(`App mentioned in channel: ${channelName} by user: ${userId}, requesting summary.`);
-    const summaryMessage = await apiGetSummary(channelId);
-    if (summaryMessage) {
-      try {
-        await slackClient.chat.postMessage({
-          channel: channelId,
-          text: summaryMessage,
-          unfurl_links: false, // Prevent link previews
-          unfurl_media: false
-        });
-        console.log(`Posted summary in reply to user ${userId}`);
-      } catch (error) {
-        console.error("Error posting summary reply:", error);
-      }
-    } else {
-      console.log("No evaluations submitted yet.");
-    }
-    return;
-  }
+  // Detect what the user is asking for
+  const wantsSummary = text.includes("summary");
+  const wantsLink = text.includes("link");
 
-  // Share a generic message if the app is mentioned but does not contain "link"
-  if (!event.text || !event.text.toLowerCase().includes("link")) {
-    console.log("App mentioned, but 'link' or 'summary' not found in message. Ignoring.");
-    const messageTextGeneric = `Hi <@${event.user}>, I can help you with the Opportunity Evaluation form. Do you need the link? Please mention me with the word "link" to get it. If you need a summary of evaluations, please mention me with the word "summary".`;
+  // Helper for posting messages
+  async function postMessage(text) {
     try {
       await slackClient.chat.postMessage({
         channel: channelId,
-        text: messageTextGeneric,
-        unfurl_links: false, // Prevent link previews
-        unfurl_media: false
+        text,
+        unfurl_links: false,
+        unfurl_media: false,
       });
-      console.log(`Posted a generic reply to user ${userId}`);
     } catch (error) {
-      console.error("Error posting generic reply:", error);
+      console.error("Error posting message:", error);
+    }
+  }
+
+  // 1. Both summary AND link
+  if (wantsSummary && wantsLink) {
+    console.log(`User ${userId} asked for both summary and link in ${channelName}`);
+
+    // Get summary
+    const summaryMessage = await apiGetSummary(channelId);
+    // Generate link message
+    const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.2094785429=${channelName}&entry.580853574=${channelId}`;
+    let message = "";
+
+    if (summaryMessage) {
+      message += `*Summary:*\n${summaryMessage}\n\n`;
+    } else {
+      message += `No evaluations submitted yet.\n\n`;
+    }
+
+    message += `*Opportunity Evaluation Form:*\n⭐ <${formLink}|Opp Evaluation Form>`;
+
+    await postMessage(`Hi <@${userId}>,\n\n${message}`);
+    return;
+  }
+
+  // 2. Only summary
+  if (wantsSummary) {
+    console.log(`User ${userId} asked for summary in ${channelName}`);
+    const summaryMessage = await apiGetSummary(channelId);
+    if (summaryMessage) {
+      await postMessage(`Hi <@${userId}>,\n\n${summaryMessage}`);
+    } else {
+      await postMessage("No evaluations submitted yet.");
     }
     return;
   }
 
-  console.log(`App mentioned in channel: ${channelName} by user: ${userId}, requesting a link.`);
+  // 3. Only link
+  if (wantsLink) {
+    console.log(`User ${userId} asked for link in ${channelName}`);
+    const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.2094785429=${channelName}&entry.580853574=${channelId}`;
+    const message = `
+Hi <@${userId}>, here's the link for the Opportunity Evaluation form:
 
-  const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfUtLkuhVmIvvBf2BviwsX_MeBMd20XMQWLR-08OdKExpQ4sg/viewform?usp=pp_url&entry.2094785429=${channelName}&entry.580853574=${channelId}`;
-  const messageText = `
-    Hi <@${userId}>, here's the link for the Opportunity Evaluation form:
-
-    ⭐ <${formLink}|Opp Evaluation Form>
-  `;
-
-  try {
-    await slackClient.chat.postMessage({
-      channel: channelId,
-      text: messageText,
-      unfurl_links: false, // Prevent link previews
-      unfurl_media: false
-    });
-    console.log(`Posted evaluation link in reply to user ${userId}`);
-  } catch (error) {
-    console.error("Error posting evaluation link reply:", error);
+⭐ <${formLink}|Opp Evaluation Form>
+    `;
+    await postMessage(message);
+    return;
   }
+
+  // 4. Neither summary nor link (generic help)
+  console.log(`User ${userId} mentioned app in ${channelName} but did not request summary or link.`);
+  const genericMessage = `Hi <@${userId}>, I can help you with the Opportunity Evaluation form.
+- Need the link? Mention me with the word "link".
+- Want a summary? Mention me with "summary".
+- Or ask for both!`;
+
+  await postMessage(genericMessage);
 }
 
 /**
