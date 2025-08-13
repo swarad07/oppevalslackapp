@@ -167,9 +167,21 @@ async function apiGetSummary(channelId) {
       return "No evaluations submitted yet.";
     }
 
+    // Filter out empty objects and check if we have any valid data
+    const validEntries = data.filter(entry =>
+      entry &&
+      entry["Email Address"] &&
+      entry["You are representing"] &&
+      entry["Scoring"]
+    );
+
+    if (validEntries.length === 0) {
+      return "No evaluations submitted yet.";
+    }
+
     // Process the data to create a summary message
     let totalScore = 0;
-    let summaryLines = data.map((entry, index) => {
+    let summaryLines = validEntries.map((entry, index) => {
       const email = entry["Email Address"];
       const team = entry["You are representing"];
       const score = parseFloat(entry["Scoring"]);
